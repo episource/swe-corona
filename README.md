@@ -5,7 +5,7 @@ Intent: A quarantine is currently required when returning from sweden to germany
 
 ## Data sources
  - Covid-19 case data for sweden: [Retrieved from `Folkhälsomyndigheten`](https://www.folkhalsomyndigheten.se/smittskydd-beredskap/utbrott/aktuella-utbrott/covid-19/bekraftade-fall-i-sverige/) - please note, that published values are continuously updated by `Folkhälsomyndigheten` when new data is available and are subject to continuous changes (rise)!
- - Swedisch population Q4/2019: [Retrieved from sweden's statistics agency SCB](https://www.scb.se/en/finding-statistics/statistics-by-subject-area/population/population-composition/population-statistics/pong/tables-and-graphs/quarterly-population-statistics--municipalities-counties-and-the-whole-country/quarter-4-2019/)
+ - Swedish population Q4/2019: [Retrieved from sweden's statistics agency SCB](https://www.scb.se/en/finding-statistics/statistics-by-subject-area/population/population-composition/population-statistics/pong/tables-and-graphs/quarterly-population-statistics--municipalities-counties-and-the-whole-country/quarter-4-2019/)
 
 ## Requirements
  - Powershell v5
