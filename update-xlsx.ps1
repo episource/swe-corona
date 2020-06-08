@@ -18,6 +18,9 @@ Param(
 )
 
 $xlsx = $PSScriptRoot + "\swe-corona.xlsx"
+$imgFile = $PSScriptRoot + "\swe-corona.png"
+$imgWidth = $None
+
 $colMap = @{ "Totalt_antal_fall" = 2; "Norrbotten" = 4; "Halland" = 6; "Västra_Götaland" = 8; "Stockholm" = 10 }
 
 $queryUrl = "https://services5.arcgis.com/fsYDFeRKu1hELJJs/arcgis/rest/services/FOHM_Covid_19_FME_1/FeatureServer/1/query?f=json&where=1%3D1&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Statistikdatum%20desc&outSR=102100&resultOffset=0&resultRecordCount=32000&resultType=standard&cacheHint=true"
@@ -46,20 +49,52 @@ try {
         }
     }
     
-    $excelChart = $excelSheet.ChartObjects("Neuinfektionen").Chart
-    $excelChartXValues = $excelChart.SeriesCollection(1).XValues
+    $excelChart = $excelSheet.ChartObjects("Neuinfektionen")
+    $excelChartXValues = $excelChart.Chart.SeriesCollection(1).XValues
     
     $wc = [Math]::floor($excelChartXValues.Length / 7)
     $lastOaDate = $excelChartXValues.Get(1)
     $lastDate = [System.DateTime]::FromOaDate($lastOaDate)
     $daysToNextMonday = (8 - $lastDate.DayOfWeek) % 7
     
-    $excelChart.Axes(1).MinimumScale = $lastOaDate + $daysToNextMonday - $wc * 7
-    $excelChart.Axes(1).MaximumScale = $lastOaDate + $daysToNextMonday
+    $excelChart.Chart.Axes(1).MinimumScale = $lastOaDate + $daysToNextMonday - $wc * 7
+    $excelChart.Chart.Axes(1).MaximumScale = $lastOaDate + $daysToNextMonday
     
     $excelSheet.Cells.Item(1, 1) = "Last Update: $(Get-Date)"
+    
+    $excel.ScreenUpdating = $True
+    
+    try {
+        $excelChart.CopyPicture([Microsoft.Office.Interop.Excel.XlPictureAppearance]::xlScreen, [Microsoft.Office.Interop.Excel.XlCopyPictureFormat]::xlBitmap)
+        
+        
+        $img = [System.Windows.Clipboard]::GetDataObject().GetData([System.Drawing.Bitmap])
+        if (-not $img) {
+            throw "clipboard empty"
+        }
+
+        if ($imgWidth -eq $None) {
+            $imgWidth = $img.Width
+        }
+        $imgHeight = [int]($img.Height / $img.Width * $imgWidth)
+        $outBitmap = New-Object -TypeName System.Drawing.Bitmap -ArgumentList $imgWidth, $imgHeight
+        
+        $outG = [System.Drawing.Graphics]::FromImage($outBitmap)
+        $outG.SmoothingMode = "HighQuality"
+        $outG.InterpolationMode = "HighQualityBicubic"
+        $outG.PixelOffsetMode = "HighQuality"
+        $outGRectangle = 
+        $outG.DrawImage($img, [System.Drawing.Rectangle]::new(0, 0, $imgWidth, $imgHeight))
+        
+        $outBitmap.Save($imgFile)
+    } catch {
+        Write-Warning "Failed to save chart image: $_"
+        throw
+    }
+    
     $excelWb.Save()
 } finally {
     $excel.ScreenUpdating = $True
     $excel.Quit()
 }
+
