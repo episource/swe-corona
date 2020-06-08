@@ -57,6 +57,7 @@ try {
     $excelChart.Axes(1).MinimumScale = $lastOaDate + $daysToNextMonday - $wc * 7
     $excelChart.Axes(1).MaximumScale = $lastOaDate + $daysToNextMonday
     
+    $excelSheet.Cells.Item(1, 1) = "Last Update: $(Get-Date)"
     $excelWb.Save()
 } finally {
     $excel.ScreenUpdating = $True
