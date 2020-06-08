@@ -18,7 +18,7 @@ Param(
 )
 
 $xlsx = $PSScriptRoot + "\swe-corona.xlsx"
-$colMap = @{ "Totalt_antal_fall" = 2; "Norrbotten" = 4; "Halland" = 6; "Stockholm" = 8 }
+$colMap = @{ "Totalt_antal_fall" = 2; "Norrbotten" = 4; "Halland" = 6; "Västra_Götaland" = 8; "Stockholm" = 10 }
 
 $queryUrl = "https://services5.arcgis.com/fsYDFeRKu1hELJJs/arcgis/rest/services/FOHM_Covid_19_FME_1/FeatureServer/1/query?f=json&where=1%3D1&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Statistikdatum%20desc&outSR=102100&resultOffset=0&resultRecordCount=32000&resultType=standard&cacheHint=true"
 
