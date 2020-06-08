@@ -60,7 +60,7 @@ try {
     $excelChart.Chart.Axes(1).MinimumScale = $lastOaDate + $daysToNextMonday - $wc * 7
     $excelChart.Chart.Axes(1).MaximumScale = $lastOaDate + $daysToNextMonday
     
-    $lastUpdate = "Last Update: $(Get-Date)"
+    $lastUpdate = "Datenabruf: $(Get-Date)"
     $excelChart.Chart.ChartTitle.Text = "Neuinfektionen/100k (7 Tage) - $lastUpdate"
     $excelSheet.Cells.Item(1, 1) = $lastUpdate
     
