@@ -3,6 +3,7 @@ The `update-xlsx.ps1` script collects covid-19 data from the swedish `Folkhälso
 
 Intent: A quarantine is currently required when returning from sweden to germany if there have been more than 50 new infections per 100k inhabitants within the last seven days. Neither `Folkhälsomyndigheten` nor RKI provide a prebuilt plot of this metric. Keep in mind: not the swedish goverment's values are relevant, but the data gathered by RKI! Therefore, the data visualized by `swe-corona.xlsx` can only be an indicator! Ultimately relevant are the [values published by german RKI](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Quarantaene_Einreisen_Deutschland.html).
 
+Please note, that `Folkhälsomyndigheten` continously updates data that has previously been published. Therefore, values are likely to increase within the days after initial publication.
 ![swe-corona.png](swe-corona.png)
 
 ## Data sources
