@@ -21,35 +21,74 @@ $xlsx = $PSScriptRoot + "\swe-corona.xlsx"
 $imgFile = $PSScriptRoot + "\swe-corona.png"
 $imgWidth = $None
 
-$colMap = @{ "Totalt_antal_fall" = 2; "Norrbotten" = 4; "Halland" = 6; "Västra_Götaland" = 8; "Stockholm" = 10 }
+$sheetSwedishAgency = "Folkhälsomyndigheten"
+$sheetEcdc = "ECDC"
+$sheetChart = "Schaubild"
+$chartName = "Neuinfektionen"
 
-$queryUrl = "https://services5.arcgis.com/fsYDFeRKu1hELJJs/arcgis/rest/services/FOHM_Covid_19_FME_1/FeatureServer/1/query?f=json&where=1%3D1&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Statistikdatum%20desc&outSR=102100&resultOffset=0&resultRecordCount=32000&resultType=standard&cacheHint=true"
+$colMapSwedishAgency = @{ "Totalt_antal_fall" = 2; "Norrbotten" = 4; "Halland" = 6; "Västra_Götaland" = 8; "Stockholm" = 10 }
+
+$queryUrlSwedishAgency = "https://services5.arcgis.com/fsYDFeRKu1hELJJs/arcgis/rest/services/FOHM_Covid_19_FME_1/FeatureServer/1/query?f=json&where=1%3D1&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Statistikdatum%20desc&outSR=102100&resultOffset=0&resultRecordCount=32000&resultType=standard&cacheHint=true"
+$queryUrlEcdc = "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
 
 
-$r = Invoke-WebRequest -UseBasicParsing $queryUrl
-$j = ConvertFrom-Json $r.Content
-
-$excel = New-Object -ComObject Excel.Application
-$curRow = 3
-try {
-    $excel.Visible = $true
-    $excel.ScreenUpdating = $False 
-    $excelWb = $excel.Workbooks.Open($xlsx)
-    $excelSheet = $excelWb.ActiveSheet
+function Update-DataFromSwedishAgency($sheet) {
+    $r = Invoke-WebRequest -UseBasicParsing $queryUrlSwedishAgency
+    $j = ConvertFrom-Json $r.Content
     
+    $curRow = 3
     $j.features | %{
         $curRow++
         $_.attributes.PSObject.Properties | % {
             if ($_.Name -eq "Statistikdatum") {
                 $date = (Get-Date 01.01.1970) + ([System.TimeSpan]::FromMilliseconds($_.Value))
-                $excelSheet.Cells.Item($curRow, 1) = $date.ToOADate()
-            } elseif ($colMap.Contains($_.Name)) {
-                $excelSheet.Cells.Item($curRow, $colMap[$_.Name]) = $_.Value
+                $sheet.Cells.Item($curRow, 1) = $date.ToOADate()
+            } elseif ($colMapSwedishAgency.Contains($_.Name)) {
+                $sheet.Cells.Item($curRow, $colMapSwedishAgency[$_.Name]) = $_.Value
             }
         }
     }
+}
+
+function Update-DateFromEcdc($sheet) {
+    $r = Invoke-WebRequest -UseBasicParsing $queryUrlEcdc
     
-    $excelChart = $excelSheet.ChartObjects("Neuinfektionen")
+    $curRow = 3
+    [String]::new($r.Content) | %{
+        $_ -split "[\r\n]+" 
+    } | Select-Object -Skip 1 | %{
+        $row = $_.Split(",")
+        [PSCustomObject]@{ 
+            "date"=[DateTime]::ParseExact($row[0], "dd/MM/yyyy", $null)
+            "cases"=$row[4]
+            "country"=$row[6]
+            "population"=$row[9]
+        }
+    } | ?{
+        $_.country -eq "sweden" 
+    } | %{
+        $curRow++
+        $sheet.Cells.Item($curRow, 1) = $_.date.ToOADate()
+        $sheet.Cells.Item($curRow, 2) = $_.cases
+        $sheet.Cells.Item($curRow, 4) = $_.population
+    }
+}
+
+
+$excel = New-Object -ComObject Excel.Application
+try {
+    $excel.Visible = $true
+    $excel.ScreenUpdating = $False 
+    $excelWb = $excel.Workbooks.Open($xlsx)
+    $excelSheetSwedishAgency = $excelWb.Sheets($sheetSwedishAgency)
+    $excelSheetEcdc = $excelWb.Sheets($sheetEcdc)
+    $excelSheetChart = $excelWb.Sheets($sheetChart)
+    
+    
+    Update-DataFromSwedishAgency($excelSheetSwedishAgency)
+    Update-DateFromEcdc($excelSheetEcdc)
+    
+    $excelChart = $excelSheetChart.ChartObjects($chartName)
     $excelChartXValues = $excelChart.Chart.SeriesCollection(1).XValues
     
     $wc = [Math]::floor($excelChartXValues.Length / 7)
@@ -63,15 +102,15 @@ try {
     $now = Get-Date -format "dddd yyyy-MM-dd HH:mm"
     $lastUpdate = "Datenabruf: $now"
     $excelChart.Chart.ChartTitle.Text = "Neuinfektionen/100k (7 Tage) - $lastUpdate"
-    $excelSheet.Cells.Item(1, 1) = $lastUpdate
+    $excelSheetSwedishAgency.Cells.Item(1, 1) = $lastUpdate
+    $excelSheetEcdc.Cells.Item(1, 1) = $lastUpdate
     
     $excel.ScreenUpdating = $True
     
     try {
         $excelChart.CopyPicture([Microsoft.Office.Interop.Excel.XlPictureAppearance]::xlScreen, [Microsoft.Office.Interop.Excel.XlCopyPictureFormat]::xlBitmap)
         
-        
-        $img = [System.Windows.Clipboard]::GetDataObject().GetData([System.Drawing.Bitmap])
+        $img = Get-Clipboard -Format Image
         if (-not $img) {
             throw "clipboard empty"
         }

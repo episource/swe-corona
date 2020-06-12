@@ -1,14 +1,18 @@
 # Visualization of new covid-19 cases in sweden within last 7 days
-The `update-xlsx.ps1` script collects covid-19 data from the swedish `Folkhälsomyndigheten` agency (swedish public health department) and updates the `swe-corona.xlsx` file accordingly. Excel is used for easy visualization of the data.
+The `update-xlsx.ps1` script collects covid-19 data from the swedish `Folkhälsomyndigheten` agency (swedish public health department) as well as the `European Centre for Disease Prevention and Control` (`ECDC`) and updates the `swe-corona.xlsx` file accordingly. Excel is used for easy visualization of the data.
 
-Intent: A quarantine is currently required when returning from sweden to germany if there have been more than 50 new infections per 100k inhabitants within the last seven days. Neither `Folkhälsomyndigheten` nor RKI provide a prebuilt plot of this metric. Keep in mind: not the swedish goverment's values are relevant, but the data gathered by RKI! Therefore, the data visualized by `swe-corona.xlsx` can only be an indicator! **Ultimately relevant are the [values published by german RKI](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Quarantaene_Einreisen_Deutschland.html).**
+Intent: A quarantine is currently required when returning from sweden to germany if there have been more than 50 new infections per 100k inhabitants within the last seven days. Neither `Folkhälsomyndigheten` nor RKI provide a prebuilt plot of this metric. Keep in mind: not the swedish goverment's values nor the inofficial calculations used by this repository are relevant, but the data gathered by RKI! Therefore, the data visualized by `swe-corona.xlsx` can only be an indicator! **Ultimately relevant are the [values published by german RKI](https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Quarantaene_Einreisen_Deutschland.html).**
 
-**Please note, that `Folkhälsomyndigheten` continously updates data that has previously been published. Therefore, values are likely to increase within the days after initial publication.**
+**Please note, that `Folkhälsomyndigheten` updates historic data that has previously been published. Therefore, these values are likely to increase within the days after initial publication.**
 ![swe-corona.png](swe-corona.png)
 
 ## Data sources
+## Folkhälsomyndigheten
  - Covid-19 case data for sweden: [Retrieved from `Folkhälsomyndigheten`](https://www.folkhalsomyndigheten.se/smittskydd-beredskap/utbrott/aktuella-utbrott/covid-19/bekraftade-fall-i-sverige/) - please note, that published values are continuously updated by `Folkhälsomyndigheten` when new data is available and are subject to continuous changes (rise)!
  - Swedish population Q4/2019: [Retrieved from sweden's statistics agency SCB](https://www.scb.se/en/finding-statistics/statistics-by-subject-area/population/population-composition/population-statistics/pong/tables-and-graphs/quarterly-population-statistics--municipalities-counties-and-the-whole-country/quarter-4-2019/)
+## European Centre for Disease Prevention and Control (ECDC)
+ - Covid-19 cases are extracted from [ecdc's csv downloadable data set](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide)
+ - Swedish population 2018 contained in above csv data set is used for calculation
 
 ## Requirements
  - Powershell v5
