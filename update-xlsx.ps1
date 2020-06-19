@@ -56,7 +56,9 @@ function Update-DateFromEcdc($sheet) {
     $curRow = 3
     [String]::new($r.Content) | %{
         $_ -split "[\r\n]+" 
-    } | Select-Object -Skip 1 | %{
+    } | Select-Object -Skip 1 | ?{
+        $_.Length -gt 0
+    } | %{
         $row = $_.Split(",")
         [PSCustomObject]@{ 
             "date"=[DateTime]::ParseExact($row[0], "dd/MM/yyyy", $null)
