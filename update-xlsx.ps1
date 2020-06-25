@@ -22,7 +22,8 @@ $imgFile = $PSScriptRoot + "\swe-corona.png"
 $imgWidth = $None
 
 $sheetSwedishAgency = "Folkhälsomyndigheten"
-$sheetEcdc = "ECDC"
+$sheetEcdcSweden = "ECDC Schweden"
+$sheetEcdcGermany = "ECDC Deutschland"
 $sheetChart = "Schaubild"
 $chartName = "Neuinfektionen"
 
@@ -32,7 +33,7 @@ $queryUrlSwedishAgency = "https://services5.arcgis.com/fsYDFeRKu1hELJJs/arcgis/r
 $queryUrlEcdc = "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
 
 
-function Update-DataFromSwedishAgency($sheet) {
+function Update-SwedishAgencySheet($sheet, $lastUpdate) {
     $r = Invoke-WebRequest -UseBasicParsing $queryUrlSwedishAgency
     $j = ConvertFrom-Json $r.Content
     
@@ -48,13 +49,28 @@ function Update-DataFromSwedishAgency($sheet) {
             }
         }
     }
+    
+    $sheet.Cells.Item(1, 1) = $lastUpdate
 }
 
-function Update-DateFromEcdc($sheet) {
+function Update-EcdcSheet($sheet, $data, $country, $lastUpdate) {
+    $curRow = 3
+    $data | ?{
+        $_.country -eq $country 
+    } | %{
+        $curRow++
+        $sheet.Cells.Item($curRow, 1) = $_.date.ToOADate()
+        $sheet.Cells.Item($curRow, 2) = $_.cases
+        $sheet.Cells.Item($curRow, 4) = $_.population
+    }
+    
+    $sheet.Cells.Item(1, 1) = $lastUpdate
+}
+
+function Get-DataFromEcdc() {
     $r = Invoke-WebRequest -UseBasicParsing $queryUrlEcdc
     
-    $curRow = 3
-    [String]::new($r.Content) | %{
+    return [String]::new($r.Content) | %{
         $_ -split "[\r\n]+" 
     } | Select-Object -Skip 1 | ?{
         $_.Length -gt 0
@@ -66,16 +82,11 @@ function Update-DateFromEcdc($sheet) {
             "country"=$row[6]
             "population"=$row[9]
         }
-    } | ?{
-        $_.country -eq "sweden" 
-    } | %{
-        $curRow++
-        $sheet.Cells.Item($curRow, 1) = $_.date.ToOADate()
-        $sheet.Cells.Item($curRow, 2) = $_.cases
-        $sheet.Cells.Item($curRow, 4) = $_.population
-    }
+    } 
 }
 
+$now = Get-Date -format "dddd yyyy-MM-dd HH:mm"
+$lastUpdate = "Datenabruf: $now"
 
 $excel = New-Object -ComObject Excel.Application
 try {
@@ -83,12 +94,17 @@ try {
     $excel.ScreenUpdating = $False 
     $excelWb = $excel.Workbooks.Open($xlsx)
     $excelSheetSwedishAgency = $excelWb.Sheets($sheetSwedishAgency)
-    $excelSheetEcdc = $excelWb.Sheets($sheetEcdc)
+    $excelSheetEcdcSweden = $excelWb.Sheets($sheetEcdcSweden)
+    $excelSheetEcdcGermany = $excelWb.Sheets($sheetEcdcGermany)
     $excelSheetChart = $excelWb.Sheets($sheetChart)
     
     
-    Update-DataFromSwedishAgency($excelSheetSwedishAgency)
-    Update-DateFromEcdc($excelSheetEcdc)
+    Update-SwedishAgencySheet $excelSheetSwedishAgency $lastUpdate
+    
+    $ecdcData = Get-DataFromEcdc
+    Update-EcdcSheet $excelSheetEcdcSweden $ecdcData "sweden" $lastUpdate
+    Update-EcdcSheet $excelSheetEcdcGermany $ecdcData "germany" $lastUpdate
+    
     
     $excelChart = $excelSheetChart.ChartObjects($chartName)
     $excelChartXValues = $excelChart.Chart.SeriesCollection(1).XValues
@@ -100,12 +116,7 @@ try {
     
     $excelChart.Chart.Axes(1).MinimumScale = $lastOaDate + $daysToNextMonday - $wc * 7
     $excelChart.Chart.Axes(1).MaximumScale = $lastOaDate + $daysToNextMonday
-    
-    $now = Get-Date -format "dddd yyyy-MM-dd HH:mm"
-    $lastUpdate = "Datenabruf: $now"
     $excelChart.Chart.ChartTitle.Text = "Neuinfektionen/100k (7 Tage) - $lastUpdate"
-    $excelSheetSwedishAgency.Cells.Item(1, 1) = $lastUpdate
-    $excelSheetEcdc.Cells.Item(1, 1) = $lastUpdate
     
     $excel.ScreenUpdating = $True
     
